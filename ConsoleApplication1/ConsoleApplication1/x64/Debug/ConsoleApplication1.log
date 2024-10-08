@@ -1,0 +1,4 @@
+﻿  ConsoleApplication1.cpp
+C:\Users\Ученик\Documents\GitHub\testy-\ConsoleApplication1\ConsoleApplication1\ConsoleApplication1.cpp(30,56): warning C4305: аргумент: усечение из "int" в "Uint8"
+C:\Users\Ученик\Documents\GitHub\testy-\ConsoleApplication1\ConsoleApplication1\ConsoleApplication1.cpp(30,38): warning C4309: аргумент: усечение константного значения
+  ConsoleApplication1.vcxproj -> C:\Users\Ученик\Documents\GitHub\testy-\ConsoleApplication1\x64\Debug\ConsoleApplication1.exe
