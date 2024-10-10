@@ -1,51 +1,96 @@
 ﻿#include <SDL.h>
 #include <iostream>
+using namespace std;
 
 int main(int argc, char* argv[]) {
     // Инициализация SDL
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
-        printf("Ошибка инициализации SDL: %s\n", SDL_GetError());
-        return 1;
+        std::cout << "Ошибка инициализации SDL: " << SDL_GetError() << std::endl;
+        return -1;
     }
 
-    // Создание окна
-    SDL_Window* window = SDL_CreateWindow("Моя игра",
-        SDL_WINDOWPOS_CENTERED,
-        SDL_WINDOWPOS_CENTERED,
-        800, 600,
-        SDL_WINDOW_SHOWN);
+    // Создаем окно
+    SDL_Window* window = SDL_CreateWindow("Простая игра на SDL2",
+        SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+        800, 600, SDL_WINDOW_SHOWN);
     if (!window) {
-        printf("Ошибка создания окна: %s\n", SDL_GetError());
+        std::cout << "Ошибка создания окна: " << SDL_GetError() << std::endl;
         SDL_Quit();
-        return 1;
+        return -1;
     }
 
+    // Создаем рендер
     SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
-    if(!renderer){
-    printf("Ошибка создания рендера: %s\n", SDL_GetError());
-    SDL_DestroyWindow(window);
-    SDL_Quit();
-    return 1;
-}
-    SDL_SetRenderDrawColor(renderer, 432, 122, 200, 167); // Устанавливаем цвет для отрисовки (синий)
-    SDL_RenderClear(renderer); // Очищаем экран (заливаем синим цветом)
-
-    SDL_Rect rect = { 100, 100, 200, 150 }; // Определяем прямоугольник
-    SDL_SetRenderDrawColor(renderer, 255, 160, 122, 255); // Устанавливаем цвет для прямоугольника (красный)
-    SDL_RenderFillRect(renderer, &rect); // Отрисовываем заполненный прямоугольник
-
-    SDL_RenderPresent(renderer); // Выводим результат на экран
-
-    SDL_Surface* surface = SDL_LoadBMP("image.bmp");
-    if (!surface) {
-        printf("Ошибка загрузки изображения: %s\n", SDL_GetError());
+    if (!renderer) {
+        std::cout << "Ошибка создания рендера: " << SDL_GetError() << std::endl;
+        SDL_DestroyWindow(window);
+        SDL_Quit();
+        return -1;
     }
 
-    // Задержка перед закрытием окна (пока просто держим окно открытым)
-    SDL_Delay(5000);
+    // Загрузка изображения персонажа
+    SDL_Surface* tempSurface = SDL_LoadBMP("character.bmp");
+    if (!tempSurface) {
+        cout << "Ошибка загрузки изображения: " << SDL_GetError() << endl;
+        SDL_DestroyRenderer(renderer);
+        SDL_DestroyWindow(window);
+        SDL_Quit();
+        return -1;
+    }
+    SDL_Texture* characterTexture = SDL_CreateTextureFromSurface(renderer, tempSurface);
+    SDL_FreeSurface(tempSurface);
 
-    // Уничтожение окна и завершение работы SDL
+    SDL_Rect characterRect = { 100, 100, 64, 64 }; // Положение и размер персонажа
+    const int speed = 1; // Скорость перемещения
+
+    int windowWidth = 800;
+    int windowHeight = 600;
+
+    // Основной цикл игры
+    bool isRunning = true;
+    SDL_Event event;
+
+    while (isRunning) {
+        // Обрабатываем события
+        while (SDL_PollEvent(&event)) {
+            if (event.type == SDL_QUIT) {
+                isRunning = false;
+            }
+        }
+
+        // Получение состояния клавиш
+        const Uint8* keystate = SDL_GetKeyboardState(NULL);
+
+        // Обработка нажатий клавиш WASD
+        if (keystate[SDL_SCANCODE_W] && characterRect.y > 0) {
+            characterRect.y -= speed;
+        }
+        if (keystate[SDL_SCANCODE_S] && characterRect.y + characterRect.h < windowHeight) {
+            characterRect.y += speed;
+        }
+        if (keystate[SDL_SCANCODE_A] && characterRect.x > 0) {
+            characterRect.x -= speed;
+        }
+        if (keystate[SDL_SCANCODE_D] && characterRect.x + characterRect.w < windowHeight) {
+            characterRect.x += speed;
+        }
+
+        // Очищаем экран
+        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); // Черный фон
+        SDL_RenderClear(renderer);
+
+        // Отрисовка персонажа
+        SDL_RenderCopy(renderer, characterTexture, NULL, &characterRect);
+
+        // Обновляем экран
+        SDL_RenderPresent(renderer);
+    }
+
+    // Очищаем ресурсы
+    SDL_DestroyTexture(characterTexture);
+    SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
     SDL_Quit();
+
     return 0;
 }
