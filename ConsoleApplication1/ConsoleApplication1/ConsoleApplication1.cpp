@@ -1,16 +1,42 @@
-﻿#include <SDL.h> 
-#include <iostream> 
+﻿#include <SDL.h>  
+#include <iostream>  
+#include <vector>  
+
 using namespace std;
 
+// Структура для стен лабиринта  
+struct Wall {
+    SDL_Rect rect;
+};
+
+struct Finish {
+    SDL_Rect rect;
+};
+
+// Функция для отрисовки лабиринта  
+void drawMaze(SDL_Renderer* renderer, const vector<Wall>& walls) {
+    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255); // Красный цвет для стен  
+    for (const auto& wall : walls) {
+        SDL_RenderFillRect(renderer, &wall.rect);
+    }
+}
+
+void drawFinish(SDL_Renderer* renderer, const vector<Finish>& fin) {
+    SDL_SetRenderDrawColor(renderer, 0, 128, 0, 255); // Зеленый цвет для стен  
+    for (const auto& Finish : fin) {
+        SDL_RenderFillRect(renderer, &Finish.rect);
+    }
+}
+
 int main(int argc, char* argv[]) {
-    // Инициализация SDL 
+    // Инициализация SDL  
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
         std::cout << "Ошибка инициализации SDL: " << SDL_GetError() << std::endl;
         return -1;
     }
 
-    // Создаем окно 
-    SDL_Window* window = SDL_CreateWindow("Простая игра на SDL2",
+    // Создаем окно  
+    SDL_Window* window = SDL_CreateWindow("EZ GAMER 2",
         SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
         800, 600, SDL_WINDOW_SHOWN);
     if (!window) {
@@ -19,7 +45,7 @@ int main(int argc, char* argv[]) {
         return -1;
     }
 
-    // Создаем рендер 
+    // Создаем рендер  
     SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
     if (!renderer) {
         std::cout << "Ошибка создания рендера: " << SDL_GetError() << std::endl;
@@ -28,7 +54,7 @@ int main(int argc, char* argv[]) {
         return -1;
     }
 
-    // Загрузка изображения персонажа 
+    // Загрузка изображения персонажа  
     SDL_Surface* tempSurface = SDL_LoadBMP("character.bmp");
     if (!tempSurface) {
         cout << "Ошибка загрузки изображения: " << SDL_GetError() << endl;
@@ -40,53 +66,111 @@ int main(int argc, char* argv[]) {
     SDL_Texture* characterTexture = SDL_CreateTextureFromSurface(renderer, tempSurface);
     SDL_FreeSurface(tempSurface);
 
-    SDL_Rect characterRect = { 100, 100, 64, 64 }; // Положение и размер персонажа 
-    const int speed = 1; // Скорость перемещения 
+    SDL_Rect characterRect = { 100, 100, 64, 64 }; // Положение и размер персонажа  
+    double speed = 1; // Скорость перемещения  
 
+    // Определяем границы окна  
     int windowWidth = 800;
     int windowHeight = 600;
 
-    // Основной цикл игры 
+    // Создаем лабиринт (стены)  
+    vector<Wall> walls = {
+        {{1, 0, 10, 600}},
+        {{1, 0, 800, 10}},
+        {{1, 590, 800, 10}},
+        {{790, 10, 10, 450}},
+        {{1, 200, 600, 10}},
+        {{200, 400, 600, 10}}
+    };
+
+    //Создаем финиш
+    vector<Finish> fin = {
+        {{782, 410, 100, 180}}
+    };
+
+    // Основной цикл игры  
     bool isRunning = true;
     SDL_Event event;
 
     while (isRunning) {
-        // Обрабатываем события 
+        // Обрабатываем события  
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_QUIT) {
                 isRunning = false;
             }
         }
 
-        // Получение состояния клавиш 
+        // Получение состояния клавиш  
         const Uint8* keystate = SDL_GetKeyboardState(NULL);
 
-        // Обработка нажатий клавиш WASD 
-        if (keystate[SDL_SCANCODE_W] && characterRect.y > 0) {
-            characterRect.y -= speed;
+        // Временные переменные для нового положения персонажа  
+        SDL_Rect newCharacterRect = characterRect;
+
+        // Обработка нажатий клавиш WASD  
+        if (keystate[SDL_SCANCODE_W]) {
+            newCharacterRect.y -= speed;
         }
-        if (keystate[SDL_SCANCODE_S] && characterRect.y + characterRect.h < windowHeight) {
-            characterRect.y += speed;
+        if (keystate[SDL_SCANCODE_S]) {
+            newCharacterRect.y += speed;
         }
-        if (keystate[SDL_SCANCODE_A] && characterRect.x > 0) {
-            characterRect.x -= speed;
+        if (keystate[SDL_SCANCODE_A]) {
+            newCharacterRect.x -= speed;
         }
-        if (keystate[SDL_SCANCODE_D] && characterRect.x + characterRect.w < windowWidth) {
-            characterRect.x += speed;
+        if (keystate[SDL_SCANCODE_D]) {
+            newCharacterRect.x += speed;
         }
 
-        // Очищаем экран 
-        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); // Черный фон 
+        
+
+
+        // Проверка столкновений со стенами  
+        
+        bool collision = false;
+        bool fam = false;
+        for (const auto& wall : walls) {
+            if (SDL_HasIntersection(&newCharacterRect, &wall.rect)) {
+                collision = true;
+                break;
+            }
+        }
+
+        for (const auto& Finish : fin) {
+            if (SDL_HasIntersection(&newCharacterRect, &Finish.rect)) {
+                fam = true;
+                break;
+            }
+        }
+        
+        if (collision == true) {
+            characterRect = { 100, 100, 64, 64 };
+        }
+
+        if (fam == true) {
+            SDL_DestroyTexture(characterTexture);
+        }
+
+        // Перемещение персонажа, если нет столкновений  
+        if (!collision) {
+            characterRect = newCharacterRect;
+        }
+        
+
+        // Очищаем экран  
+        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); // Черный фон  
         SDL_RenderClear(renderer);
 
-        // Отрисовка персонажа 
+        // Отрисовка лабиринта  
+        drawMaze(renderer, walls);
+
+        drawFinish(renderer, fin);
+        // Отрисовка персонажа  
         SDL_RenderCopy(renderer, characterTexture, NULL, &characterRect);
 
-        // Обновляем экран 
+        // Обновляем экран  
         SDL_RenderPresent(renderer);
     }
 
-    // Очищаем ресурсы 
+    // Очищаем ресурсы  
     SDL_DestroyTexture(characterTexture);
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
