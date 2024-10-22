@@ -1,6 +1,6 @@
-﻿#include <SDL.h>  
-#include <iostream>  
-#include <vector>  
+﻿#include <SDL.h>
+#include <iostream>
+#include <vector>
 
 using namespace std;
 
@@ -12,6 +12,12 @@ struct Wall {
 struct Finish {
     SDL_Rect rect;
 };
+
+
+void clearScreen(SDL_Renderer* renderer, SDL_Color backgroundColor) {
+    SDL_SetRenderDrawColor(renderer, backgroundColor.r, backgroundColor.g, backgroundColor.b, backgroundColor.a);
+    SDL_RenderClear(renderer);
+}
 
 // Функция для отрисовки лабиринта  
 void drawMaze(SDL_Renderer* renderer, const vector<Wall>& walls) {
@@ -78,7 +84,7 @@ int main(int argc, char* argv[]) {
         {{1, 0, 10, 600}},
         {{1, 0, 800, 10}},
         {{1, 590, 800, 10}},
-        {{790, 10, 10, 450}},
+        {{790, 10, 10, 400}},
         {{1, 200, 600, 10}},
         {{200, 400, 600, 10}}
     };
@@ -121,12 +127,13 @@ int main(int argc, char* argv[]) {
         }
 
         
-
+        SDL_Color backgroundColor = { 0, 0, 0, 255 }; // Цвет фона (черный)
 
         // Проверка столкновений со стенами  
         
         bool collision = false;
         bool fam = false;
+
         for (const auto& wall : walls) {
             if (SDL_HasIntersection(&newCharacterRect, &wall.rect)) {
                 collision = true;
@@ -141,18 +148,23 @@ int main(int argc, char* argv[]) {
             }
         }
         
-        if (collision == true) {
+        if (collision) {
             characterRect = { 100, 100, 64, 64 };
         }
 
-        if (fam == true) {
-            SDL_DestroyTexture(characterTexture);
+        if (fam) {
+            clearScreen(renderer, backgroundColor);
+            SDL_RenderPresent(renderer);
         }
+        
 
         // Перемещение персонажа, если нет столкновений  
-        if (!collision) {
+        if (!collision && !fam) {
             characterRect = newCharacterRect;
+            SDL_Delay(1);
         }
+
+
         
 
         // Очищаем экран  
